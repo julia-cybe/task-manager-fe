@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { taskService } from '../services/taskService'
+import { DropdownMenu } from './DropdownMenu'
 import type { Task } from '../types/Task'
 
-export const TaskList = () => {
+interface TaskListProps {
+  onTaskEdit?: (task: Task) => void
+  onTaskDelete?: (taskId: number) => void
+  refreshTrigger?: number
+}
+
+export const TaskList = ({ onTaskEdit, onTaskDelete, refreshTrigger }: TaskListProps) => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +29,7 @@ export const TaskList = () => {
     }
 
     fetchTasks()
-  }, [])
+  }, [refreshTrigger])
 
   if (loading) {
     return (
@@ -147,11 +154,10 @@ export const TaskList = () => {
 
               <div className="flex-shrink-0 ml-4">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
+                  <DropdownMenu
+                    onEdit={() => onTaskEdit?.(task)}
+                    onDelete={() => onTaskDelete?.(task.id)}
+                  />
                 </div>
               </div>
             </div>

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Task, Status } from '../types/Task'
 import { TaskForm } from './TaskForm'
+import type { Task, Status } from '../types/Task'
 
 const mockOnSubmit = vi.fn()
 const mockOnCancel = vi.fn()
