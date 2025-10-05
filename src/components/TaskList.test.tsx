@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+
 import { TaskList } from './TaskList'
 import { taskService } from '../services/taskService'
-import { type Task, Status } from '../types/Task'
+import type { Task, Status } from '../types/Task'
 
 // Mock the taskService
 vi.mock('../services/taskService')
@@ -15,20 +16,20 @@ describe('TaskList', () => {
       id: 1,
       title: 'First Task',
       description: 'First task description',
-      status: Status.TODO,
+      status: 'TODO' as Status,
       dueDate: '2024-12-31'
     },
     {
       id: 2,
       title: 'Second Task',
       description: 'Second task description',
-      status: Status.IN_PROGRESS,
+      status: 'IN_PROGRESS' as Status,
       dueDate: '2024-12-25'
     },
     {
       id: 3,
       title: 'Third Task',
-      status: Status.DONE
+      status: 'DONE' as Status
     }
   ]
 

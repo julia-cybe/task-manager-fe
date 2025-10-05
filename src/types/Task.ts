@@ -1,8 +1,4 @@
-export enum Status {
-  TODO = 'TODO',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE'
-}
+export type Status = 'TODO' | 'IN_PROGRESS' | 'DONE';
 
 export interface Task {
   id: number

@@ -1,38 +1,40 @@
 import type { Task } from '../types/Task'
-import { Status } from '../types/Task'
+import type { Status } from '../types/Task'
 
 const API_BASE_URL = '/api'
 
 // Mock data for development when backend is not available
-const mockTasks: Task[] = [
+let mockTasks: Task[] = [
   {
     id: 1,
     title: 'Complete project setup',
     description: 'Set up the frontend React application with TypeScript and Tailwind CSS',
-    status: Status.IN_PROGRESS,
+    status: 'IN_PROGRESS' as Status,
     dueDate: '2024-12-20'
   },
   {
     id: 2,
     title: 'Implement task listing',
     description: 'Create a component to display all tasks with proper styling',
-    status: Status.DONE,
+    status: 'DONE' as Status,
     dueDate: '2024-12-15'
   },
   {
     id: 3,
     title: 'Add task creation form',
     description: 'Build a form to add new tasks to the system',
-    status: Status.TODO,
+    status: 'TODO' as Status,
     dueDate: '2024-12-25'
   },
   {
     id: 4,
     title: 'Setup backend API',
     description: 'Create Spring Boot backend with REST endpoints',
-    status: Status.TODO
+    status: 'TODO' as Status
   }
 ]
+
+let nextMockId = 5
 
 export const taskService = {
   async getAllTasks(): Promise<Task[]> {
@@ -68,7 +70,13 @@ export const taskService = {
 
       return await response.json()
     } catch (error) {
-      throw error
+      // Backend not available, find task in mock data
+      console.log('Backend not available, finding task in mock data')
+      const task = mockTasks.find(t => t.id === id)
+      if (!task) {
+        throw new Error('Task not found')
+      }
+      return Promise.resolve(task)
     }
   },
 
@@ -88,7 +96,14 @@ export const taskService = {
 
       return await response.json()
     } catch (error) {
-      throw error
+      // Backend not available, create task in mock data
+      console.log('Backend not available, creating task in mock data')
+      const newTask: Task = {
+        ...task,
+        id: nextMockId++
+      }
+      mockTasks.push(newTask)
+      return Promise.resolve(newTask)
     }
   },
 
@@ -108,7 +123,19 @@ export const taskService = {
 
       return await response.json()
     } catch (error) {
-      throw error
+      // Backend not available, update task in mock data
+      console.log('Backend not available, updating task in mock data')
+      const existingTaskIndex = mockTasks.findIndex(t => t.id === id)
+      if (existingTaskIndex === -1) {
+        throw new Error('Task not found')
+      }
+      
+      const updatedTask: Task = {
+        ...mockTasks[existingTaskIndex],
+        ...task
+      }
+      mockTasks[existingTaskIndex] = updatedTask
+      return Promise.resolve(updatedTask)
     }
   },
 
@@ -122,7 +149,14 @@ export const taskService = {
         throw new Error('Failed to delete task')
       }
     } catch (error) {
-      throw error
+      // Backend not available, delete task from mock data
+      console.log('Backend not available, deleting task from mock data')
+      const taskIndex = mockTasks.findIndex(t => t.id === id)
+      if (taskIndex === -1) {
+        throw new Error('Task not found')
+      }
+      mockTasks.splice(taskIndex, 1)
+      return Promise.resolve()
     }
   }
 }
