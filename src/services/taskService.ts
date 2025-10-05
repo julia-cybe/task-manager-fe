@@ -1,162 +1,117 @@
+import axios from 'axios'
 import type { Task } from '../types/Task'
-import type { Status } from '../types/Task'
 
-const API_BASE_URL = '/api'
+// Configure axios for the Spring Boot backend
+const API_BASE_URL = 'http://localhost:8080/api/v1/tasks'
 
-// Mock data for development when backend is not available
-let mockTasks: Task[] = [
-  {
-    id: 1,
-    title: 'Complete project setup',
-    description: 'Set up the frontend React application with TypeScript and Tailwind CSS',
-    status: 'IN_PROGRESS' as Status,
-    dueDate: '2024-12-20'
+// Create axios instance with default configuration
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  {
-    id: 2,
-    title: 'Implement task listing',
-    description: 'Create a component to display all tasks with proper styling',
-    status: 'DONE' as Status,
-    dueDate: '2024-12-15'
-  },
-  {
-    id: 3,
-    title: 'Add task creation form',
-    description: 'Build a form to add new tasks to the system',
-    status: 'TODO' as Status,
-    dueDate: '2024-12-25'
-  },
-  {
-    id: 4,
-    title: 'Setup backend API',
-    description: 'Create Spring Boot backend with REST endpoints',
-    status: 'TODO' as Status
+})
+
+// Add response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message)
+    return Promise.reject(error)
   }
-]
+)
 
-let nextMockId = 5
+// Type guard to check if error has response property
+const hasResponseStatus = (error: unknown): error is { response: { status: number } } => {
+  return typeof error === 'object' && error !== null && 'response' in error &&
+         typeof (error as any).response === 'object' && 'status' in (error as any).response
+}
 
 export const taskService = {
+  /**
+   * Get all tasks from the backend
+   */
   async getAllTasks(): Promise<Task[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks`)
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks')
-      }
-
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        // Backend not available, return mock data
-        console.log('Backend not available, using mock data')
-        return Promise.resolve(mockTasks)
-      }
-
-      return await response.json()
+      const response = await apiClient.get<Task[]>('')
+      return response.data
     } catch (error) {
-      // Backend not available, return mock data
-      console.log('Backend not available, using mock data')
-      return Promise.resolve(mockTasks)
+      console.error('Failed to fetch tasks:', error)
+      throw new Error('Failed to fetch tasks')
     }
   },
 
+  /**
+   * Get a specific task by ID
+   */
   async getTaskById(id: number): Promise<Task> {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/${id}`)
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch task')
-      }
-
-      return await response.json()
+      const response = await apiClient.get<Task>(`/${id}`)
+      return response.data
     } catch (error) {
-      // Backend not available, find task in mock data
-      console.log('Backend not available, finding task in mock data')
-      const task = mockTasks.find(t => t.id === id)
-      if (!task) {
+      console.error(`Failed to fetch task with id ${id}:`, error)
+      if (hasResponseStatus(error) && error.response.status === 404) {
         throw new Error('Task not found')
       }
-      return Promise.resolve(task)
+      throw new Error('Failed to fetch task')
     }
   },
 
+  /**
+   * Create a new task
+   */
   async createTask(task: Omit<Task, 'id'>): Promise<Task> {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(task),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create task')
-      }
-
-      return await response.json()
+      const response = await apiClient.post<Task>('', task)
+      return response.data
     } catch (error) {
-      // Backend not available, create task in mock data
-      console.log('Backend not available, creating task in mock data')
-      const newTask: Task = {
-        ...task,
-        id: nextMockId++
+      console.error('Failed to create task:', error)
+      if (hasResponseStatus(error) && error.response.status === 400) {
+        throw new Error('Invalid task data')
       }
-      mockTasks.push(newTask)
-      return Promise.resolve(newTask)
+      throw new Error('Failed to create task')
     }
   },
 
+  /**
+   * Update an existing task
+   */
   async updateTask(id: number, task: Partial<Task>): Promise<Task> {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(task),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update task')
-      }
-
-      return await response.json()
-    } catch (error) {
-      // Backend not available, update task in mock data
-      console.log('Backend not available, updating task in mock data')
-      const existingTaskIndex = mockTasks.findIndex(t => t.id === id)
-      if (existingTaskIndex === -1) {
-        throw new Error('Task not found')
-      }
+      // For the backend API, we need to send the complete task object
+      // First get the current task, then merge with updates
+      const currentTask = await this.getTaskById(id)
+      const updatedTask = { ...currentTask, ...task }
       
-      const updatedTask: Task = {
-        ...mockTasks[existingTaskIndex],
-        ...task
+      const response = await apiClient.put<Task>(`/${id}`, updatedTask)
+      return response.data
+    } catch (error) {
+      console.error(`Failed to update task with id ${id}:`, error)
+      if (hasResponseStatus(error)) {
+        if (error.response.status === 404) {
+          throw new Error('Task not found')
+        }
+        if (error.response.status === 400) {
+          throw new Error('Invalid task data')
+        }
       }
-      mockTasks[existingTaskIndex] = updatedTask
-      return Promise.resolve(updatedTask)
+      throw new Error('Failed to update task')
     }
   },
 
+  /**
+   * Delete a task by ID
+   */
   async deleteTask(id: number): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete task')
-      }
+      await apiClient.delete(`/${id}`)
     } catch (error) {
-      // Backend not available, delete task from mock data
-      console.log('Backend not available, deleting task from mock data')
-      const taskIndex = mockTasks.findIndex(t => t.id === id)
-      if (taskIndex === -1) {
+      console.error(`Failed to delete task with id ${id}:`, error)
+      if (hasResponseStatus(error) && error.response.status === 404) {
         throw new Error('Task not found')
       }
-      mockTasks.splice(taskIndex, 1)
-      return Promise.resolve()
+      throw new Error('Failed to delete task')
     }
   }
 }
