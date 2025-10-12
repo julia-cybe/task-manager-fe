@@ -1,6 +1,6 @@
 # Task Manager Frontend
 
-A modern task management application built with React, TypeScript, Vite, and Tailwind CSS. This application provides a clean, responsive interface for managing tasks with full CRUD operations.
+A modern task management application built with React, TypeScript, Vite, and Tailwind CSS. This application provides a clean, responsive interface for managing tasks with full CRUD operations. The project has been initialized with the help of the CLAUDE.md file.
 
 ## 🚀 Tech Stack
 
@@ -11,6 +11,7 @@ A modern task management application built with React, TypeScript, Vite, and Tai
 - **Vitest** - Fast unit testing framework
 - **Axios** - HTTP client for API calls
 - **ESLint** - Code linting and formatting
+- **Claude Code & Github Copilot** - AI-enabled software development
 
 ## 📁 Project Structure
 
